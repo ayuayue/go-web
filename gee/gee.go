@@ -23,6 +23,7 @@ func New() *Engine {
 func (engine *Engine) addRoute(method string, pattern string, handler HandlerFunc) {
 	engine.router.addRoute(method, pattern, handler)
 }
+
 //GET 方法
 func (engine *Engine) GET(pattern string, handler HandlerFunc) {
 	engine.addRoute("GET", pattern, handler)
