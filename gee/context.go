@@ -22,7 +22,9 @@ type Context struct {
 	//相应信息
 	StatusCode int
 	//请求参数
-	Params map[string]string
+	Params   map[string]string
+	handlers []HandlerFunc
+	index    int
 }
 
 //newContext 实例化返回一个Context实例
@@ -32,6 +34,16 @@ func newContext(w http.ResponseWriter, req *http.Request) *Context {
 		Req:    req,
 		Path:   req.URL.Path,
 		Method: req.Method,
+		index:  -1,
+	}
+}
+
+//Next 处理中间件逻辑
+func (c *Context) Next() {
+	c.index++
+	s := len(c.handlers)
+	for ; c.index < s; c.index++ {
+		c.handlers[c.index](c)
 	}
 }
 
@@ -90,4 +102,10 @@ func (c *Context) HTML(code int, html string) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
 	c.Writer.Write([]byte(html))
+}
+
+//Fail 中间件测试
+func (c *Context) Fail(code int, err string) {
+	c.index = len(c.handlers)
+	c.JSON(code, H{"message": err})
 }
