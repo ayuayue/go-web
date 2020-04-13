@@ -25,6 +25,7 @@ type Context struct {
 	Params   map[string]string
 	handlers []HandlerFunc
 	index    int
+	engine   *Engine
 }
 
 //newContext 实例化返回一个Context实例
@@ -98,10 +99,12 @@ func (c *Context) Data(code int, data []byte) {
 }
 
 //HTML 返回html响应信息
-func (c *Context) HTML(code int, html string) {
+func (c *Context) HTML(code int, name string, data interface{}) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
-	c.Writer.Write([]byte(html))
+	if err := c.engine.htmlTemplates.ExecuteTemplate(c.Writer, name, data); err != nil {
+		c.Fail(500, err.Error())
+	}
 }
 
 //Fail 中间件测试
