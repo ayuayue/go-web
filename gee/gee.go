@@ -21,14 +21,7 @@ type Engine struct {
 	htmlTemplates *template.Template
 	funcMap       template.FuncMap
 }
-//SetFuncMap 设置模版处理
-func (engine *Engine) SetFuncMap(funcMap template.FuncMap)  {
-	engine.funcMap = funcMap
-}
-//LoadHTMLGlob 加载html
-func (engine *Engine) LoadHTMLGlob(pattern string)  {
-	engine.htmlTemplates = template.Must(template.New("").Funcs(engine.funcMap).ParseGlob(pattern))
-}
+
 //RouterGroup 路由组
 type RouterGroup struct {
 	prefix      string
@@ -42,6 +35,13 @@ func New() *Engine {
 	engine := &Engine{router: newRouter()}
 	engine.RouterGroup = &RouterGroup{engine: engine}
 	engine.groups = []*RouterGroup{engine.RouterGroup}
+	return engine
+}
+
+//Default use Logger() & Recovery middlewares
+func Default() *Engine {
+	engine := New()
+	engine.Use(Logger(), Recovery())
 	return engine
 }
 
@@ -60,14 +60,14 @@ func (group *RouterGroup) Group(prefix string) *RouterGroup {
 //addRoute 路由组添加路由
 func (group *RouterGroup) addRoute(method string, comp string, handler HandlerFunc) {
 	pattern := group.prefix + comp
-	log.Printf("Router %4s = %s", method, pattern)
+	log.Printf("Router %4s - %s", method, pattern)
 	group.engine.router.addRoute(method, pattern, handler)
 }
 
 //addRoute 添加路由
-func (engine *Engine) addRoute(method string, pattern string, handler HandlerFunc) {
-	engine.router.addRoute(method, pattern, handler)
-}
+// func (engine *Engine) addRoute(method string, pattern string, handler HandlerFunc) {
+// 	engine.router.addRoute(method, pattern, handler)
+// }
 
 //GET 路由组GET
 func (group *RouterGroup) GET(pattern string, handler HandlerFunc) {
@@ -75,9 +75,9 @@ func (group *RouterGroup) GET(pattern string, handler HandlerFunc) {
 }
 
 //GET 方法
-func (engine *Engine) GET(pattern string, handler HandlerFunc) {
-	engine.addRoute("GET", pattern, handler)
-}
+// func (engine *Engine) GET(pattern string, handler HandlerFunc) {
+// 	engine.addRoute("GET", pattern, handler)
+// }
 
 //POST 路由组注册post方法
 func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
@@ -85,9 +85,9 @@ func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
 }
 
 //POST 方法
-func (engine *Engine) POST(pattern string, handler HandlerFunc) {
-	engine.addRoute("POST", pattern, handler)
-}
+// func (engine *Engine) POST(pattern string, handler HandlerFunc) {
+// 	engine.addRoute("POST", pattern, handler)
+// }
 
 //Use 使用中间件
 func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
@@ -113,6 +113,16 @@ func (group *RouterGroup) Static(relativePath string, root string) {
 	handler := group.createStaticHandler(relativePath, http.Dir(root))
 	urlPattern := path.Join(relativePath, "/filepath")
 	group.GET(urlPattern, handler)
+}
+
+//SetFuncMap 模版渲染
+func (engine *Engine) SetFuncMap(funcMap template.FuncMap) {
+	engine.funcMap = funcMap
+}
+
+//LoadHTMLGlob 加载模版
+func (engine *Engine) LoadHTMLGlob(pattern string) {
+	engine.htmlTemplates = template.Must(template.New("").Funcs(engine.funcMap).ParseGlob(pattern))
 }
 
 //ServeHTTP 实现
